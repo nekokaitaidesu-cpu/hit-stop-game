@@ -39,6 +39,7 @@ export class OnlineLobbyScene extends Phaser.Scene {
 
     const weapons: WeaponType[] = ['shotgun', 'laser', 'beam'];
     const wLabels = ['🔫 SG', '⚡ LG', '💜 BEAM'];
+    const wDescs = ['散弾をばら撒く', '壁に反射する高速LG', '障害物貫通の極太ビーム'];
     const wBtns: Phaser.GameObjects.Text[] = [];
 
     weapons.forEach((w, i) => {
@@ -58,6 +59,11 @@ export class OnlineLobbyScene extends Phaser.Scene {
         });
       });
       wBtns.push(btn);
+
+      // 武器説明
+      this.add.text(85 + i * 155, 205, wDescs[i], {
+        fontSize: '10px', color: '#556677',
+      }).setOrigin(0.5);
     });
 
     // ── ホスト：部屋を作る ────────────────────────────────────
