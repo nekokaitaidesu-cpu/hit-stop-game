@@ -213,7 +213,9 @@ export class BattleScene extends Phaser.Scene {
         continue;
       }
 
-      if (target.isAlive && this.circleOverlap(p.x, p.y, 4, target.x, target.y, tr)) {
+      if (target.isAlive &&
+          this.circleOverlap(p.x, p.y, 4, target.x, target.y, tr) &&
+          !this.obstacles.lineBlocked(p.x, p.y, target.x, target.y)) {
         target.takeDamage(p.damage, 'shotgun');
         p.destroy();
         pellets.splice(i, 1);
@@ -255,7 +257,9 @@ export class BattleScene extends Phaser.Scene {
         continue;
       }
 
-      if (target.isAlive && lb.hits(target.x, target.y, tr)) {
+      if (target.isAlive &&
+          lb.hits(target.x, target.y, tr) &&
+          !this.obstacles.lineBlocked(lb.x, lb.y, target.x, target.y)) {
         lb.hasHit = true;
         target.takeDamage(lb.damage, 'laser');
         lb.destroy();
@@ -271,7 +275,10 @@ export class BattleScene extends Phaser.Scene {
       beam.update(dt);   // ← ①の核心: 必ずupdate()を呼ぶ
       if (beam.dead) { beams.splice(i, 1); continue; }
 
-      if (target.isAlive && !beam.hitTargets.has(target) && beam.hits(target.x, target.y, tr)) {
+      if (target.isAlive &&
+          !beam.hitTargets.has(target) &&
+          beam.hits(target.x, target.y, tr) &&
+          !this.obstacles.lineBlocked(beam.x, beam.y, target.x, target.y)) {
         beam.hitTargets.add(target);
         target.takeDamage(beam.damage, 'beam');
         if (beam.hitTargets.size >= beam.maxHits) { beam.destroy(); beams.splice(i, 1); }

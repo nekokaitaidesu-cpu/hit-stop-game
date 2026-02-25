@@ -20,12 +20,9 @@ export class ObstacleGroup {
     this.graphics = scene.add.graphics().setDepth(5);
 
     for (const d of defs) {
-      // Physics body: invisible rectangle (staticGroup handles body creation)
-      const rect = scene.add.rectangle(d.x + d.w / 2, d.y + d.h / 2, d.w, d.h);
+      // ③ origin(0,0) + 左上座標で配置 → グラフィックと完全一致
+      const rect = scene.add.rectangle(d.x, d.y, d.w, d.h).setOrigin(0, 0);
       this.staticGroup.add(rect);
-      // 明示的にボディ位置をリセット（描画グラフィックと一致させる）
-      const body = rect.body as Phaser.Physics.Arcade.StaticBody;
-      body.reset(d.x + d.w / 2, d.y + d.h / 2);
 
       // Visual
       this.graphics.fillStyle(0x334466, 1);
@@ -56,6 +53,44 @@ export class ObstacleGroup {
       if (dx * dx + dy * dy < r * r) return true;
     }
     return false;
+  }
+
+  /**
+   * ② 線分 (x1,y1)→(x2,y2) が障害物を通過するか（Liang-Barsky法）
+   * 通過する場合 true → 命中判定を無効化するために使用
+   */
+  lineBlocked(x1: number, y1: number, x2: number, y2: number): boolean {
+    for (const d of this.defs) {
+      if (this.segmentHitsRect(x1, y1, x2, y2, d.x, d.y, d.x + d.w, d.y + d.h)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private segmentHitsRect(
+    x1: number, y1: number, x2: number, y2: number,
+    minX: number, minY: number, maxX: number, maxY: number,
+  ): boolean {
+    const dx = x2 - x1, dy = y2 - y1;
+    let tMin = 0, tMax = 1;
+    const checks: [number, number][] = [
+      [-dx, x1 - minX],
+      [dx,  maxX - x1],
+      [-dy, y1 - minY],
+      [dy,  maxY - y1],
+    ];
+    for (const [p, q] of checks) {
+      if (p === 0) {
+        if (q < 0) return false;
+      } else {
+        const t = q / p;
+        if (p < 0) tMin = Math.max(tMin, t);
+        else       tMax = Math.min(tMax, t);
+        if (tMin > tMax) return false;
+      }
+    }
+    return true;
   }
 
   addCollider(target: Phaser.GameObjects.GameObject | Phaser.Physics.Arcade.Group) {

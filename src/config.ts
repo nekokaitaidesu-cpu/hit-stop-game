@@ -11,7 +11,7 @@ export const WEAPON_CONFIG = {
     spread: Math.PI / 5,
     speed: 600,
     cooldown: 40,
-    damage: 8,
+    damage: 5,   // 8→5（近距離ワンパン防止）
     range: 400,
   },
   laser: {
@@ -22,7 +22,7 @@ export const WEAPON_CONFIG = {
     range: 600,
   },
   beam: {
-    speed: 200,
+    speed: 320,  // 200→320（移動速度250より速く）
     width: 240,
     height: 80,
     cooldown: 60,
@@ -41,7 +41,7 @@ export const HIT_STOP_FRAMES = {
 
 export const PLAYER_CONFIG = {
   speed: 250,
-  maxHp: 100,
+  maxHp: 150,  // 100→150（試合時間を伸ばして駆け引き増加）
   radius: 22,
 };
 

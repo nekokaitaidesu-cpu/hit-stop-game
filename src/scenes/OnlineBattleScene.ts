@@ -332,7 +332,8 @@ export class OnlineBattleScene extends Phaser.Scene {
       if (this.obstacles.circleOverlaps(p.x, p.y, 4)) {
         p.destroy(); this.localPellets.splice(i, 1); continue;
       }
-      if (this.circleOverlap(p.x, p.y, 4, this.remoteX, this.remoteY, tr)) {
+      if (this.circleOverlap(p.x, p.y, 4, this.remoteX, this.remoteY, tr) &&
+          !this.obstacles.lineBlocked(p.x, p.y, this.remoteX, this.remoteY)) {
         const dmg = p.damage;
         p.destroy();
         this.localPellets.splice(i, 1);
@@ -370,7 +371,9 @@ export class OnlineBattleScene extends Phaser.Scene {
         continue;
       }
 
-      if (!lb.hasHit && lb.hits(this.remoteX, this.remoteY, tr)) {
+      if (!lb.hasHit &&
+          lb.hits(this.remoteX, this.remoteY, tr) &&
+          !this.obstacles.lineBlocked(lb.x, lb.y, this.remoteX, this.remoteY)) {
         lb.hasHit = true;
         this.sendHit(lb.damage, 'laser');
         lb.destroy();
@@ -384,7 +387,9 @@ export class OnlineBattleScene extends Phaser.Scene {
       beam.update(dt);
       if (beam.dead) { this.localBeams.splice(i, 1); continue; }
 
-      if (!beam.hitTargets.has(this.remoteSprite) && beam.hits(this.remoteX, this.remoteY, tr)) {
+      if (!beam.hitTargets.has(this.remoteSprite) &&
+          beam.hits(this.remoteX, this.remoteY, tr) &&
+          !this.obstacles.lineBlocked(beam.x, beam.y, this.remoteX, this.remoteY)) {
         beam.hitTargets.add(this.remoteSprite);
         this.sendHit(beam.damage, 'beam');
         if (beam.hitTargets.size >= beam.maxHits) {
