@@ -5,11 +5,13 @@ import type { ObstacleDef } from '../objects/Obstacle';
 
 /** ネットワークで送受信するメッセージの型 */
 export type NetMsg =
-  | { type: 'ready';   weapon: WeaponType; obstacles?: ObstacleDef[] } // 武器＋障害物を交換
-  | { type: 'pos';     x: number; y: number; hp: number } // 位置・HP を毎フレーム送信
-  | { type: 'fire';    angle: number }                    // 発射（角度のみ）
-  | { type: 'hit';     amount: number; weapon: WeaponType } // 命中エフェクト通知
-  | { type: 'gameOver' };                                 // 勝敗確定
+  | { type: 'ready';         weapon: WeaponType; obstacles?: ObstacleDef[] }
+  | { type: 'pos';           x: number; y: number; hp: number }
+  | { type: 'fire';          angle: number }
+  | { type: 'hit';           amount: number; weapon: WeaponType }
+  | { type: 'gameOver' }
+  | { type: 'rematch';       weapon: WeaponType; obstacles?: ObstacleDef[] } // LOSE側が送信
+  | { type: 'rematchAccept'; weapon: WeaponType; obstacles?: ObstacleDef[] }; // WIN側が返信
 
 export class PeerManager {
   private peer: Peer;

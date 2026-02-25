@@ -13,6 +13,7 @@ import { LaserBolt } from '../projectiles/LaserBolt';
 import { BeamProjectile } from '../projectiles/BeamProjectile';
 import { DamagePopup } from '../ui/DamagePopup';
 import type { PeerManager, NetMsg } from '../network/PeerManager';
+import { generateObstacles } from '../network/generateObstacles';
 
 // ─── 設計方針 ────────────────────────────────────────────────────────────────
 // • 命中判定は「攻撃した側」が行い、hit メッセージで相手に通知（sender-authoritative）
@@ -58,6 +59,12 @@ export class OnlineBattleScene extends Phaser.Scene {
   };
   private isDesktop = true;
   private gameOver = false;
+
+  // ── 再戦 ─────────────────────────────────────────────────────────────────
+  /** WIN側が次の対戦で使う武器（結果画面で選択可） */
+  private rematchWeapon: WeaponType = 'shotgun';
+  /** LOSE側が送信した rematch メッセージを WIN 側が受け取った時点での武器（再戦開始に使う） */
+  private loseRematchWeapon: WeaponType = 'shotgun';
 
   constructor() {
     super({ key: 'OnlineBattleScene' });
@@ -145,7 +152,7 @@ export class OnlineBattleScene extends Phaser.Scene {
       fontSize: '14px', color: '#ff6666', backgroundColor: '#222222',
       padding: { x: 6, y: 3 },
     }).setDepth(60).setInteractive({ useHandCursor: true })
-      .on('pointerdown', () => { this.cleanup(); this.scene.start('MenuScene'); });
+      .on('pointerdown', () => { this.cleanup(true); this.scene.start('MenuScene'); });
 
     // ネットワーク受信
     this.peer.onMessage      = (msg) => this.handleMessage(msg);
@@ -245,6 +252,32 @@ export class OnlineBattleScene extends Phaser.Scene {
 
       case 'gameOver':
         this.endGame(true);
+        break;
+
+      case 'rematch':
+        // WIN側が受信 → 返信して再戦開始
+        if (this.isHost) {
+          // HOST(WIN): 障害物を新規生成して rematchAccept に含める
+          const newObs = generateObstacles();
+          this.obstacleData = newObs;
+          this.peer.send({ type: 'rematchAccept', weapon: this.rematchWeapon, obstacles: newObs });
+          this.startRematch(msg.weapon, this.rematchWeapon, newObs);
+        } else {
+          // GUEST(WIN): HOST(LOSE)が生成した障害物を使う
+          this.peer.send({ type: 'rematchAccept', weapon: this.rematchWeapon });
+          this.startRematch(msg.weapon, this.rematchWeapon, msg.obstacles ?? []);
+        }
+        break;
+
+      case 'rematchAccept':
+        // LOSE側が受信 → 再戦開始
+        if (this.isHost) {
+          // HOST(LOSE): 自分が生成した障害物を使う
+          this.startRematch(this.loseRematchWeapon, msg.weapon, this.obstacleData);
+        } else {
+          // GUEST(LOSE): HOST(WIN)が生成した障害物を使う
+          this.startRematch(this.loseRematchWeapon, msg.weapon, msg.obstacles ?? []);
+        }
         break;
     }
   }
@@ -391,18 +424,136 @@ export class OnlineBattleScene extends Phaser.Scene {
     this.gameOver = true;
     this.localPlayer.setVelocity(0, 0);
 
-    const msg   = localWon ? 'YOU WIN! 🎉' : 'YOU LOSE...';
-    const color = localWon ? '#44ff88'     : '#ff4444';
+    const cx    = GAME_WIDTH / 2;
+    const baseY = GAME_HEIGHT / 2 - 120;
 
-    this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 60, msg, {
-      fontSize: '48px', color, stroke: '#000', strokeThickness: 6, fontStyle: 'bold',
+    // 勝敗テキスト
+    const resultMsg   = localWon ? 'YOU WIN! 🎉' : 'YOU LOSE...';
+    const resultColor = localWon ? '#44ff88'     : '#ff4444';
+    this.add.text(cx, baseY, resultMsg, {
+      fontSize: '46px', color: resultColor, stroke: '#000',
+      strokeThickness: 6, fontStyle: 'bold',
     }).setOrigin(0.5).setDepth(80);
 
-    this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 20, 'MENU に戻る', {
-      fontSize: '22px', color: '#ffffff', backgroundColor: '#333333',
-      padding: { x: 20, y: 10 },
+    if (localWon) {
+      this.buildWinRematchUI(cx, baseY);
+    } else {
+      this.buildLoseRematchUI(cx, baseY);
+    }
+
+    // MENU に戻るボタン（共通・最下部）
+    this.add.text(cx, baseY + 320, 'MENUに戻る', {
+      fontSize: '20px', color: '#aaaaaa', backgroundColor: '#222222',
+      padding: { x: 18, y: 9 },
     }).setOrigin(0.5).setDepth(80).setInteractive({ useHandCursor: true })
-      .on('pointerdown', () => { this.cleanup(); this.scene.start('MenuScene'); });
+      .on('pointerdown', () => { this.cleanup(true); this.scene.start('MenuScene'); });
+  }
+
+  // ─── WIN側 UI ─────────────────────────────────────────────────────────────
+  private buildWinRematchUI(cx: number, baseY: number) {
+    this.rematchWeapon = this.localWeapon; // 現在の武器をデフォルトに
+
+    this.add.text(cx, baseY + 70, '再戦を受け付けています...', {
+      fontSize: '17px', color: '#ffdd44',
+    }).setOrigin(0.5).setDepth(80);
+
+    this.add.text(cx, baseY + 115, '次の対戦で使う武器：', {
+      fontSize: '13px', color: '#aaaaaa',
+    }).setOrigin(0.5).setDepth(80);
+
+    const weapons: WeaponType[] = ['shotgun', 'laser', 'beam'];
+    const wLabels = ['🔫 SG', '⚡ LG', '💜 BEAM'];
+    const wBtns: Phaser.GameObjects.Text[] = [];
+
+    weapons.forEach((w, i) => {
+      const btn = this.add.text(78 + i * 150, baseY + 155, wLabels[i], {
+        fontSize: '15px',
+        color:           w === this.rematchWeapon ? '#ffdd44' : '#888888',
+        backgroundColor: w === this.rematchWeapon ? '#333300' : '#111111',
+        padding: { x: 14, y: 8 },
+      }).setOrigin(0.5).setDepth(80).setInteractive({ useHandCursor: true });
+
+      btn.on('pointerdown', () => {
+        this.rematchWeapon = w;
+        wBtns.forEach((b, j) => {
+          b.setColor(weapons[j] === this.rematchWeapon ? '#ffdd44' : '#888888');
+          b.setBackgroundColor(weapons[j] === this.rematchWeapon ? '#333300' : '#111111');
+        });
+      });
+      wBtns.push(btn);
+    });
+  }
+
+  // ─── LOSE側 UI ────────────────────────────────────────────────────────────
+  private buildLoseRematchUI(cx: number, baseY: number) {
+    // 「再戦する」ボタン
+    const rematchBtn = this.add.text(cx, baseY + 80, '🔄  再戦する', {
+      fontSize: '22px', color: '#000000', backgroundColor: '#ffaa00',
+      padding: { x: 22, y: 11 }, fontStyle: 'bold',
+    }).setOrigin(0.5).setDepth(80).setInteractive({ useHandCursor: true });
+
+    rematchBtn.on('pointerdown', () => {
+      rematchBtn.setInteractive(false).setAlpha(0.5);
+      this.buildLoseWeaponPicker(cx, baseY);
+    });
+  }
+
+  private buildLoseWeaponPicker(cx: number, baseY: number) {
+    this.add.text(cx, baseY + 135, '次の対戦で使う武器を選んでください', {
+      fontSize: '13px', color: '#aaaaaa',
+    }).setOrigin(0.5).setDepth(80);
+
+    const weapons: WeaponType[] = ['shotgun', 'laser', 'beam'];
+    const wLabels = ['🔫 SG', '⚡ LG', '💜 BEAM'];
+    let sent = false;
+
+    weapons.forEach((w, i) => {
+      const btn = this.add.text(78 + i * 150, baseY + 175, wLabels[i], {
+        fontSize: '15px', color: '#ffffff', backgroundColor: '#223344',
+        padding: { x: 14, y: 8 },
+      }).setOrigin(0.5).setDepth(80).setInteractive({ useHandCursor: true });
+
+      btn.on('pointerover', () => { if (!sent) btn.setBackgroundColor('#335566'); });
+      btn.on('pointerout',  () => { if (!sent) btn.setBackgroundColor('#223344'); });
+
+      btn.on('pointerdown', () => {
+        if (sent) return;
+        sent = true;
+        this.loseRematchWeapon = w;
+
+        // ボタンを選択状態に固定
+        weapons.forEach((_, j) => {
+          // btnへの参照は closure の btn ではなく index で管理する必要があるため
+          // 選ばれたものだけ色変え・それ以外は暗くする処理は下記で行う
+        });
+        btn.setColor('#ffdd44').setBackgroundColor('#333300');
+
+        // 再戦リクエスト送信
+        if (this.isHost) {
+          const newObs = generateObstacles();
+          this.obstacleData = newObs;
+          this.peer.send({ type: 'rematch', weapon: w, obstacles: newObs });
+        } else {
+          this.peer.send({ type: 'rematch', weapon: w });
+        }
+
+        this.add.text(cx, baseY + 225, '相手の承認待ち...', {
+          fontSize: '14px', color: '#44ffaa',
+        }).setOrigin(0.5).setDepth(80);
+      });
+    });
+  }
+
+  // ─── 再戦開始 ─────────────────────────────────────────────────────────────
+  private startRematch(localWeapon: WeaponType, remoteWeapon: WeaponType, obstacles: ObstacleDef[]) {
+    this.cleanup(false); // peer は維持したまま画面をクリーン
+    this.scene.start('OnlineBattleScene', {
+      peer: this.peer,
+      localWeapon,
+      remoteWeapon,
+      isHost: this.isHost,
+      obstacles,
+    });
   }
 
   private showDisconnected() {
@@ -415,7 +566,7 @@ export class OnlineBattleScene extends Phaser.Scene {
       fontSize: '20px', color: '#ffffff', backgroundColor: '#333333',
       padding: { x: 16, y: 8 },
     }).setOrigin(0.5).setDepth(80).setInteractive({ useHandCursor: true })
-      .on('pointerdown', () => { this.cleanup(); this.scene.start('MenuScene'); });
+      .on('pointerdown', () => { this.cleanup(true); this.scene.start('MenuScene'); });
   }
 
   private circleOverlap(x1: number, y1: number, r1: number, x2: number, y2: number, r2: number) {
@@ -423,15 +574,15 @@ export class OnlineBattleScene extends Phaser.Scene {
     return dx * dx + dy * dy < (r1 + r2) * (r1 + r2);
   }
 
-  private cleanup() {
+  private cleanup(destroyPeer = true) {
     [...this.localLasers,  ...this.remoteLasers ].forEach(l => l.destroy());
     [...this.localBeams,   ...this.remoteBeams  ].forEach(b => b.destroy());
     this.remoteHpGraphics?.destroy();
     this.joystick?.destroy();
-    this.hud.destroy();
+    this.hud?.destroy();
     this.obstacles?.destroy();
-    this.peer.destroy();
+    if (destroyPeer) this.peer.destroy();
   }
 
-  shutdown() { this.cleanup(); }
+  shutdown() { this.cleanup(true); }
 }
