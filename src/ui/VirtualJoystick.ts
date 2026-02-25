@@ -14,6 +14,13 @@ export class VirtualJoystick {
   private dy = 0;
   private _visible = true;
 
+  // 短いタップ判定用
+  private tapDownTime = 0;
+  private tapDownX = 0;
+  private tapDownY = 0;
+  private readonly TAP_MS = 200;   // これ以下なら短いタップ
+  private readonly TAP_MOVE = 20;  // これ以下の移動なら短いタップ
+
   // Right side for aiming/shoot
   private shootCallback?: (x: number, y: number) => void;
   private shootPointerId: number | null = null;
@@ -36,6 +43,9 @@ export class VirtualJoystick {
       if (p.x < GAME_WIDTH / 2) {
         if (this.activePointerId === null) {
           this.activePointerId = p.id;
+          this.tapDownTime = Date.now();
+          this.tapDownX = p.x;
+          this.tapDownY = p.y;
           this.baseX = p.x;
           this.baseY = p.y;
           this.drawBase();
@@ -67,6 +77,16 @@ export class VirtualJoystick {
 
     input.on('pointerup', (p: Phaser.Input.Pointer) => {
       if (p.id === this.activePointerId) {
+        const elapsed = Date.now() - this.tapDownTime;
+        const moved = Math.sqrt(
+          (p.x - this.tapDownX) ** 2 + (p.y - this.tapDownY) ** 2,
+        );
+
+        // 短いタップ → タップ位置に向かって発射
+        if (elapsed < this.TAP_MS && moved < this.TAP_MOVE) {
+          this.shootCallback?.(p.worldX, p.worldY);
+        }
+
         this.activePointerId = null;
         this.dx = 0;
         this.dy = 0;

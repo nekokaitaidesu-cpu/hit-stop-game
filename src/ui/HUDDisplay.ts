@@ -17,9 +17,9 @@ export class HUDDisplay {
 
   private create() {
     const depth = 50;
-    // Player HP (bottom)
+    // Player HP (bottom) - 40px上げてスマホ下部ブラウザUIの見切れ対策
     this.playerHPBar = this.scene.add.graphics().setDepth(depth);
-    this.playerHPText = this.scene.add.text(10, 800, 'Player HP', {
+    this.playerHPText = this.scene.add.text(10, 760, 'Player HP', {
       fontSize: '14px', color: '#fff', stroke: '#000', strokeThickness: 2,
     }).setDepth(depth);
 
@@ -30,7 +30,7 @@ export class HUDDisplay {
     }).setDepth(depth);
 
     // Weapon label
-    this.weaponText = this.scene.add.text(GAME_WIDTH / 2, 820, '', {
+    this.weaponText = this.scene.add.text(GAME_WIDTH / 2, 780, '', {
       fontSize: '16px', color: '#ffdd44', stroke: '#000', strokeThickness: 2,
     }).setOrigin(0.5).setDepth(depth);
 
@@ -44,9 +44,9 @@ export class HUDDisplay {
     // Player HP
     this.playerHPBar.clear();
     this.playerHPBar.fillStyle(0x333333);
-    this.playerHPBar.fillRect(10, 820, barW, 12);
+    this.playerHPBar.fillRect(10, 780, barW, 12);
     this.playerHPBar.fillStyle(0x44ff44);
-    this.playerHPBar.fillRect(10, 820, barW * Math.max(0, playerHp / playerMaxHp), 12);
+    this.playerHPBar.fillRect(10, 780, barW * Math.max(0, playerHp / playerMaxHp), 12);
 
     this.playerHPText.setText(`YOU  ${playerHp}/${playerMaxHp}`);
 
@@ -68,9 +68,9 @@ export class HUDDisplay {
     // Cooldown bar
     this.cooldownBar.clear();
     this.cooldownBar.fillStyle(0x888888);
-    this.cooldownBar.fillRect(GAME_WIDTH / 2 - 80, 838, 160, 6);
+    this.cooldownBar.fillRect(GAME_WIDTH / 2 - 80, 798, 160, 6);
     this.cooldownBar.fillStyle(0xffdd44);
-    this.cooldownBar.fillRect(GAME_WIDTH / 2 - 80, 838, 160 * Math.min(1, cooldownRatio), 6);
+    this.cooldownBar.fillRect(GAME_WIDTH / 2 - 80, 798, 160 * Math.min(1, cooldownRatio), 6);
   }
 
   destroy() {
