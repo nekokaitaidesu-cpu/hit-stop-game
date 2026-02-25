@@ -263,16 +263,19 @@ export class OnlineBattleScene extends Phaser.Scene {
 
       case 'rematch':
         // WIN側が受信 → 返信して再戦開始
+        // startRematch(localWeapon, remoteWeapon, obstacles)
+        // localWeapon = 自分(WIN)の武器 = this.rematchWeapon
+        // remoteWeapon = 相手(LOSE)の武器 = msg.weapon
         if (this.isHost) {
           // HOST(WIN): 障害物を新規生成して rematchAccept に含める
           const newObs = generateObstacles();
           this.obstacleData = newObs;
           this.peer.send({ type: 'rematchAccept', weapon: this.rematchWeapon, obstacles: newObs });
-          this.startRematch(msg.weapon, this.rematchWeapon, newObs);
+          this.startRematch(this.rematchWeapon, msg.weapon, newObs);
         } else {
           // GUEST(WIN): HOST(LOSE)が生成した障害物を使う
           this.peer.send({ type: 'rematchAccept', weapon: this.rematchWeapon });
-          this.startRematch(msg.weapon, this.rematchWeapon, msg.obstacles ?? []);
+          this.startRematch(this.rematchWeapon, msg.weapon, msg.obstacles ?? []);
         }
         break;
 
