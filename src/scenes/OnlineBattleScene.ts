@@ -2,6 +2,8 @@ import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT, PLAYER_CONFIG, WEAPON_CONFIG, COLORS } from '../config';
 import type { WeaponType } from '../config';
 import { Player } from '../objects/Player';
+import { ObstacleGroup } from '../objects/Obstacle';
+import type { ObstacleDef } from '../objects/Obstacle';
 import { HitStop } from '../effects/HitStop';
 import { ScreenShake } from '../effects/ScreenShake';
 import { HUDDisplay } from '../ui/HUDDisplay';
@@ -23,6 +25,8 @@ export class OnlineBattleScene extends Phaser.Scene {
   // ── ネットワーク ─────────────────────────────────────────────────────────
   private peer!: PeerManager;
   private isHost!: boolean;
+  private obstacleData: ObstacleDef[] = [];
+  private obstacles!: ObstacleGroup;
 
   // ── プレイヤー ───────────────────────────────────────────────────────────
   private localPlayer!: Player;
@@ -59,11 +63,12 @@ export class OnlineBattleScene extends Phaser.Scene {
     super({ key: 'OnlineBattleScene' });
   }
 
-  init(data: { peer: PeerManager; localWeapon: WeaponType; remoteWeapon: WeaponType; isHost: boolean }) {
+  init(data: { peer: PeerManager; localWeapon: WeaponType; remoteWeapon: WeaponType; isHost: boolean; obstacles?: ObstacleDef[] }) {
     this.peer         = data.peer;
     this.localWeapon  = data.localWeapon;
     this.remoteWeapon = data.remoteWeapon;
     this.isHost       = data.isHost;
+    this.obstacleData = data.obstacles ?? [];
     this.gameOver     = false;
     this.remoteHp     = PLAYER_CONFIG.maxHp;
   }
@@ -87,6 +92,9 @@ export class OnlineBattleScene extends Phaser.Scene {
     this.hitStop    = new HitStop(this);
     this.screenShake = new ScreenShake(this);
 
+    // 障害物（ホスト・ゲスト共通のデータで生成）
+    this.obstacles = new ObstacleGroup(this, this.obstacleData);
+
     // ホスト = 下側、ゲスト = 上側
     const localY  = this.isHost ? GAME_HEIGHT - 150 : 150;
     this.remoteY  = this.isHost ? 150 : GAME_HEIGHT - 150;
@@ -103,6 +111,9 @@ export class OnlineBattleScene extends Phaser.Scene {
     this.remoteSprite = this.add.sprite(this.remoteX, this.remoteY, 'player')
       .setTint(COLORS.enemy)
       .setDepth(20);
+
+    // ローカルプレイヤーと障害物の衝突
+    this.obstacles.addCollider(this.localPlayer);
 
     // 入力
     if (this.isDesktop) {
@@ -269,6 +280,9 @@ export class OnlineBattleScene extends Phaser.Scene {
       if (!p.active) { this.localPellets.splice(i, 1); continue; }
       p.update();
 
+      if (this.obstacles.circleOverlaps(p.x, p.y, 4)) {
+        p.destroy(); this.localPellets.splice(i, 1); continue;
+      }
       if (this.circleOverlap(p.x, p.y, 4, this.remoteX, this.remoteY, tr)) {
         const dmg = p.damage;
         p.destroy();
@@ -400,6 +414,7 @@ export class OnlineBattleScene extends Phaser.Scene {
     this.remoteHpGraphics?.destroy();
     this.joystick?.destroy();
     this.hud.destroy();
+    this.obstacles?.destroy();
     this.peer.destroy();
   }
 

@@ -2,6 +2,8 @@ import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from '../config';
 import type { WeaponType } from '../config';
 import { PeerManager } from '../network/PeerManager';
+import { generateObstacles } from '../network/generateObstacles';
+import type { ObstacleDef } from '../objects/Obstacle';
 
 export class OnlineLobbyScene extends Phaser.Scene {
   private peer: PeerManager | null = null;
@@ -186,6 +188,8 @@ export class OnlineLobbyScene extends Phaser.Scene {
 
     const peer = new PeerManager(true);
     this.peer = peer;
+    // ホスト側でマップの障害物を決定（ゲストにも送信して共有）
+    const obstacles: ObstacleDef[] = generateObstacles();
 
     peer.onOpen = () => {
       const code = peer.getRoomCode();
@@ -200,7 +204,8 @@ export class OnlineLobbyScene extends Phaser.Scene {
 
     peer.onConnected = () => {
       this.setStatus('接続完了！', '#44ff88');
-      peer.send({ type: 'ready', weapon: this.selectedWeapon });
+      // 障害物データも一緒に送る
+      peer.send({ type: 'ready', weapon: this.selectedWeapon, obstacles });
     };
 
     peer.onMessage = (msg) => {
@@ -211,6 +216,7 @@ export class OnlineLobbyScene extends Phaser.Scene {
             localWeapon:  this.selectedWeapon,
             remoteWeapon: msg.weapon,
             isHost:       true,
+            obstacles,            // ホストが生成したものをそのまま渡す
           });
         });
       }
@@ -246,6 +252,7 @@ export class OnlineLobbyScene extends Phaser.Scene {
             localWeapon:  this.selectedWeapon,
             remoteWeapon: msg.weapon,
             isHost:       false,
+            obstacles:    msg.obstacles ?? [], // ホストから受け取った障害物を使う
           });
         });
       }

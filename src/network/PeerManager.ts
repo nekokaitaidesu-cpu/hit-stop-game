@@ -1,10 +1,11 @@
 import Peer from 'peerjs';
 import type { DataConnection } from 'peerjs';
 import type { WeaponType } from '../config';
+import type { ObstacleDef } from '../objects/Obstacle';
 
 /** ネットワークで送受信するメッセージの型 */
 export type NetMsg =
-  | { type: 'ready';   weapon: WeaponType }               // 武器選択を交換
+  | { type: 'ready';   weapon: WeaponType; obstacles?: ObstacleDef[] } // 武器＋障害物を交換
   | { type: 'pos';     x: number; y: number; hp: number } // 位置・HP を毎フレーム送信
   | { type: 'fire';    angle: number }                    // 発射（角度のみ）
   | { type: 'hit';     amount: number; weapon: WeaponType } // 命中エフェクト通知

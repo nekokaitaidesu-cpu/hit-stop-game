@@ -6,8 +6,6 @@ export class MenuScene extends Phaser.Scene {
   private selectedWeapon: WeaponType = 'shotgun';
   private selectedMode: GameMode = 'training';
   private selectedLevel: CpuLevel = 1;
-
-  // CPU レベル選択UI（モードが battle のときだけ表示）
   private levelSection!: Phaser.GameObjects.Container;
 
   constructor() {
@@ -22,18 +20,40 @@ export class MenuScene extends Phaser.Scene {
     bg.fillGradientStyle(0x0a0a2e, 0x0a0a2e, 0x1a1a4e, 0x1a1a4e, 1);
     bg.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
-    // Title
-    this.add.text(cx, 90, 'HIT STOP', {
-      fontSize: '52px', color: '#ffffff', stroke: '#4488ff',
+    // ── タイトル ─────────────────────────────────────────────
+    this.add.text(cx, 72, 'HIT STOP', {
+      fontSize: '48px', color: '#ffffff', stroke: '#4488ff',
       strokeThickness: 6, fontStyle: 'bold',
     }).setOrigin(0.5);
-    this.add.text(cx, 150, 'GAME', {
-      fontSize: '28px', color: '#4488ff', fontStyle: 'bold',
+    this.add.text(cx, 126, 'GAME', {
+      fontSize: '26px', color: '#4488ff', fontStyle: 'bold',
     }).setOrigin(0.5);
 
+    // ── 🌐 ONLINE BATTLE（メインコンテンツ、GAME直下） ──────
+    this.add.graphics()
+      .lineStyle(1, 0x223355, 1)
+      .lineBetween(30, 158, GAME_WIDTH - 30, 158);
+
+    const onlineBtn = this.add.text(cx, 188, '🌐  ONLINE BATTLE', {
+      fontSize: '24px', color: '#44ccff', backgroundColor: '#001a33',
+      padding: { x: 28, y: 14 }, fontStyle: 'bold',
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+    this.add.text(cx, 228, '友達と 1 vs 1 でオンライン対戦！', {
+      fontSize: '13px', color: '#4488aa',
+    }).setOrigin(0.5);
+
+    onlineBtn.on('pointerover', () => onlineBtn.setBackgroundColor('#002a4d'));
+    onlineBtn.on('pointerout',  () => onlineBtn.setBackgroundColor('#001a33'));
+    onlineBtn.on('pointerdown', () => this.scene.start('OnlineLobbyScene'));
+
+    this.add.graphics()
+      .lineStyle(1, 0x223355, 1)
+      .lineBetween(30, 250, GAME_WIDTH - 30, 250);
+
     // ── WEAPON ──────────────────────────────────────────────
-    this.add.text(cx, 220, '── WEAPON ──', {
-      fontSize: '16px', color: '#aaaaff',
+    this.add.text(cx, 272, '── WEAPON ──', {
+      fontSize: '15px', color: '#aaaaff',
     }).setOrigin(0.5);
 
     const weapons: WeaponType[] = ['shotgun', 'laser', 'beam'];
@@ -41,11 +61,11 @@ export class MenuScene extends Phaser.Scene {
     const weaponBtns: Phaser.GameObjects.Text[] = [];
 
     weapons.forEach((w, i) => {
-      const btn = this.add.text(cx, 262 + i * 58, weaponLabels[i], {
-        fontSize: '20px',
-        color: w === this.selectedWeapon ? '#ffdd44' : '#888888',
+      const btn = this.add.text(cx, 308 + i * 54, weaponLabels[i], {
+        fontSize: '19px',
+        color:           w === this.selectedWeapon ? '#ffdd44' : '#888888',
         backgroundColor: w === this.selectedWeapon ? '#333300' : '#111111',
-        padding: { x: 18, y: 9 },
+        padding: { x: 18, y: 8 },
       }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
       btn.on('pointerdown', () => {
@@ -59,8 +79,8 @@ export class MenuScene extends Phaser.Scene {
     });
 
     // ── MODE ────────────────────────────────────────────────
-    this.add.text(cx, 448, '── MODE ──', {
-      fontSize: '16px', color: '#aaaaff',
+    this.add.text(cx, 482, '── MODE ──', {
+      fontSize: '15px', color: '#aaaaff',
     }).setOrigin(0.5);
 
     const modes: GameMode[] = ['training', 'battle'];
@@ -68,11 +88,11 @@ export class MenuScene extends Phaser.Scene {
     const modeBtns: Phaser.GameObjects.Text[] = [];
 
     modes.forEach((m, i) => {
-      const btn = this.add.text(cx, 488 + i * 58, modeLabels[i], {
-        fontSize: '20px',
-        color: m === this.selectedMode ? '#44ffaa' : '#888888',
+      const btn = this.add.text(cx, 516 + i * 54, modeLabels[i], {
+        fontSize: '19px',
+        color:           m === this.selectedMode ? '#44ffaa' : '#888888',
         backgroundColor: m === this.selectedMode ? '#003322' : '#111111',
-        padding: { x: 18, y: 9 },
+        padding: { x: 18, y: 8 },
       }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
       btn.on('pointerdown', () => {
@@ -81,51 +101,49 @@ export class MenuScene extends Phaser.Scene {
           b.setColor(modes[j] === this.selectedMode ? '#44ffaa' : '#888888');
           b.setBackgroundColor(modes[j] === this.selectedMode ? '#003322' : '#111111');
         });
-        // レベル選択の表示切り替え
         this.levelSection.setVisible(this.selectedMode === 'battle');
       });
       modeBtns.push(btn);
     });
 
-    // ── CPU LEVEL（battle のときだけ表示） ──────────────────
+    // ── CPU LEVEL（battle のときだけ） ───────────────────────
     this.levelSection = this.add.container(0, 0);
 
-    const lvLabel = this.add.text(cx, 612, '── CPU LEVEL ──', {
-      fontSize: '16px', color: '#ffaaaa',
+    const lvLabel = this.add.text(cx, 634, '── CPU LEVEL ──', {
+      fontSize: '15px', color: '#ffaaaa',
     }).setOrigin(0.5);
     this.levelSection.add(lvLabel);
 
     const levels: CpuLevel[] = [1, 2, 3];
     const levelLabels = ['⭐ Lv.1  かんたん', '⭐⭐ Lv.2  ふつう', '⭐⭐⭐ Lv.3  むずかしい'];
-    const levelColors = { sel: '#ff6666', selBg: '#330000', def: '#888888', defBg: '#111111' };
+    const lc = { sel: '#ff6666', selBg: '#330000', def: '#888888', defBg: '#111111' };
     const levelBtns: Phaser.GameObjects.Text[] = [];
 
     levels.forEach((lv, i) => {
-      const btn = this.add.text(cx, 650 + i * 52, levelLabels[i], {
-        fontSize: '17px',
-        color: lv === this.selectedLevel ? levelColors.sel : levelColors.def,
-        backgroundColor: lv === this.selectedLevel ? levelColors.selBg : levelColors.defBg,
-        padding: { x: 16, y: 8 },
+      const btn = this.add.text(cx, 668 + i * 50, levelLabels[i], {
+        fontSize: '16px',
+        color:           lv === this.selectedLevel ? lc.sel : lc.def,
+        backgroundColor: lv === this.selectedLevel ? lc.selBg : lc.defBg,
+        padding: { x: 14, y: 8 },
       }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
       btn.on('pointerdown', () => {
         this.selectedLevel = lv;
         levelBtns.forEach((b, j) => {
-          const active = levels[j] === this.selectedLevel;
-          b.setColor(active ? levelColors.sel : levelColors.def);
-          b.setBackgroundColor(active ? levelColors.selBg : levelColors.defBg);
+          const a = levels[j] === this.selectedLevel;
+          b.setColor(a ? lc.sel : lc.def);
+          b.setBackgroundColor(a ? lc.selBg : lc.defBg);
         });
       });
       levelBtns.push(btn);
       this.levelSection.add(btn);
     });
 
-    // Training 開始時は非表示
     this.levelSection.setVisible(this.selectedMode === 'battle');
 
-    // ── START ───────────────────────────────────────────────
-    const startBtn = this.add.text(cx, 810, '▶  START  ◀', {
-      fontSize: '26px', color: '#000000', backgroundColor: '#44ff88',
+    // ── START ────────────────────────────────────────────────
+    const startBtn = this.add.text(cx, 808, '▶  START  ◀', {
+      fontSize: '25px', color: '#000000', backgroundColor: '#44ff88',
       padding: { x: 28, y: 13 }, fontStyle: 'bold',
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
@@ -140,16 +158,8 @@ export class MenuScene extends Phaser.Scene {
       });
     });
 
-    // ── ONLINE BATTLE ──────────────────────────────────────────
-    const onlineBtn = this.add.text(cx, 847, '🌐  ONLINE BATTLE（友達と対戦）', {
-      fontSize: '15px', color: '#44aaff', backgroundColor: '#001133',
-      padding: { x: 16, y: 8 },
-    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-
-    onlineBtn.on('pointerover', () => onlineBtn.setBackgroundColor('#002255'));
-    onlineBtn.on('pointerout',  () => onlineBtn.setBackgroundColor('#001133'));
-    onlineBtn.on('pointerdown', () => {
-      this.scene.start('OnlineLobbyScene');
-    });
+    this.add.text(cx, 848, 'PC: WASD + Click  │  Mobile: Joystick + Tap', {
+      fontSize: '11px', color: '#444444',
+    }).setOrigin(0.5);
   }
 }
