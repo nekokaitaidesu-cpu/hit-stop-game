@@ -29,17 +29,25 @@ export class MenuScene extends Phaser.Scene {
       fontSize: '26px', color: '#4488ff', fontStyle: 'bold',
     }).setOrigin(0.5);
 
+    // ── 操作説明 ─────────────────────────────────────────────
+    this.add.text(cx, 140, 'PC: WASDキーで移動 ／ クリックした方向に射撃', {
+      fontSize: '11px', color: '#556677',
+    }).setOrigin(0.5);
+    this.add.text(cx, 154, 'スマホ: 左下スティックで移動 ／ タップした方向に射撃', {
+      fontSize: '11px', color: '#556677',
+    }).setOrigin(0.5);
+
     // ── 🌐 ONLINE BATTLE（メインコンテンツ、GAME直下） ──────
     this.add.graphics()
       .lineStyle(1, 0x223355, 1)
-      .lineBetween(30, 158, GAME_WIDTH - 30, 158);
+      .lineBetween(30, 182, GAME_WIDTH - 30, 182);
 
-    const onlineBtn = this.add.text(cx, 188, '🌐  ONLINE BATTLE', {
+    const onlineBtn = this.add.text(cx, 212, '🌐  ONLINE BATTLE', {
       fontSize: '24px', color: '#44ccff', backgroundColor: '#001a33',
       padding: { x: 28, y: 14 }, fontStyle: 'bold',
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
-    this.add.text(cx, 228, '友達と 1 vs 1 でオンライン対戦！', {
+    this.add.text(cx, 252, '友達と 1 vs 1 でオンライン対戦！', {
       fontSize: '13px', color: '#4488aa',
     }).setOrigin(0.5);
 
@@ -49,10 +57,10 @@ export class MenuScene extends Phaser.Scene {
 
     this.add.graphics()
       .lineStyle(1, 0x223355, 1)
-      .lineBetween(30, 250, GAME_WIDTH - 30, 250);
+      .lineBetween(30, 274, GAME_WIDTH - 30, 274);
 
     // ── WEAPON ──────────────────────────────────────────────
-    this.add.text(cx, 272, '── WEAPON ──', {
+    this.add.text(cx, 296, '── WEAPON ──', {
       fontSize: '15px', color: '#aaaaff',
     }).setOrigin(0.5);
 
@@ -61,7 +69,7 @@ export class MenuScene extends Phaser.Scene {
     const weaponBtns: Phaser.GameObjects.Text[] = [];
 
     weapons.forEach((w, i) => {
-      const btn = this.add.text(cx, 308 + i * 54, weaponLabels[i], {
+      const btn = this.add.text(cx, 332 + i * 54, weaponLabels[i], {
         fontSize: '19px',
         color:           w === this.selectedWeapon ? '#ffdd44' : '#888888',
         backgroundColor: w === this.selectedWeapon ? '#333300' : '#111111',
@@ -79,7 +87,7 @@ export class MenuScene extends Phaser.Scene {
     });
 
     // ── MODE ────────────────────────────────────────────────
-    this.add.text(cx, 482, '── MODE ──', {
+    this.add.text(cx, 506, '── MODE ──', {
       fontSize: '15px', color: '#aaaaff',
     }).setOrigin(0.5);
 
@@ -88,7 +96,7 @@ export class MenuScene extends Phaser.Scene {
     const modeBtns: Phaser.GameObjects.Text[] = [];
 
     modes.forEach((m, i) => {
-      const btn = this.add.text(cx, 516 + i * 54, modeLabels[i], {
+      const btn = this.add.text(cx, 540 + i * 54, modeLabels[i], {
         fontSize: '19px',
         color:           m === this.selectedMode ? '#44ffaa' : '#888888',
         backgroundColor: m === this.selectedMode ? '#003322' : '#111111',
@@ -109,7 +117,7 @@ export class MenuScene extends Phaser.Scene {
     // ── CPU LEVEL（battle のときだけ） ───────────────────────
     this.levelSection = this.add.container(0, 0);
 
-    const lvLabel = this.add.text(cx, 634, '── CPU LEVEL ──', {
+    const lvLabel = this.add.text(cx, 658, '── CPU LEVEL ──', {
       fontSize: '15px', color: '#ffaaaa',
     }).setOrigin(0.5);
     this.levelSection.add(lvLabel);
@@ -120,7 +128,7 @@ export class MenuScene extends Phaser.Scene {
     const levelBtns: Phaser.GameObjects.Text[] = [];
 
     levels.forEach((lv, i) => {
-      const btn = this.add.text(cx, 668 + i * 50, levelLabels[i], {
+      const btn = this.add.text(cx, 692 + i * 50, levelLabels[i], {
         fontSize: '16px',
         color:           lv === this.selectedLevel ? lc.sel : lc.def,
         backgroundColor: lv === this.selectedLevel ? lc.selBg : lc.defBg,
@@ -142,7 +150,7 @@ export class MenuScene extends Phaser.Scene {
     this.levelSection.setVisible(this.selectedMode === 'battle');
 
     // ── START ────────────────────────────────────────────────
-    const startBtn = this.add.text(cx, 808, '▶  START  ◀', {
+    const startBtn = this.add.text(cx, 832, '▶  START  ◀', {
       fontSize: '25px', color: '#000000', backgroundColor: '#44ff88',
       padding: { x: 28, y: 13 }, fontStyle: 'bold',
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
@@ -158,8 +166,5 @@ export class MenuScene extends Phaser.Scene {
       });
     });
 
-    this.add.text(cx, 848, 'PC: WASD + Click  │  Mobile: Joystick + Tap', {
-      fontSize: '11px', color: '#444444',
-    }).setOrigin(0.5);
   }
 }

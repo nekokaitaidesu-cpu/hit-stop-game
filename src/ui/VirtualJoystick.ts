@@ -1,27 +1,28 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from '../config';
 
+// 左下の固定スティックエリア
+const STICK_ZONE_W = 200;
+const STICK_ZONE_H = 210;
+const STICK_ZONE_X = 0;
+const STICK_ZONE_Y = GAME_HEIGHT - STICK_ZONE_H;
+
 export class VirtualJoystick {
   private scene: Phaser.Scene;
+  private zoneBg!: Phaser.GameObjects.Graphics;
   private base!: Phaser.GameObjects.Graphics;
   private thumb!: Phaser.GameObjects.Graphics;
-  private baseX = 100;
-  private baseY = GAME_HEIGHT - 140;
-  private radius = 55;
-  private thumbRadius = 25;
+
+  // スティックの固定中心座標
+  private readonly baseX = 90;
+  private readonly baseY = GAME_HEIGHT - 100;
+  private readonly radius = 55;
+  private readonly thumbRadius = 25;
+
   private activePointerId: number | null = null;
   private dx = 0;
   private dy = 0;
-  private _visible = true;
 
-  // 短いタップ判定用
-  private tapDownTime = 0;
-  private tapDownX = 0;
-  private tapDownY = 0;
-  private readonly TAP_MS = 200;   // これ以下なら短いタップ
-  private readonly TAP_MOVE = 20;  // これ以下の移動なら短いタップ
-
-  // Right side for aiming/shoot
   private shootCallback?: (x: number, y: number) => void;
   private shootPointerId: number | null = null;
 
@@ -31,8 +32,20 @@ export class VirtualJoystick {
     this.create();
   }
 
+  private isInStickZone(x: number, y: number): boolean {
+    return x >= STICK_ZONE_X && x < STICK_ZONE_X + STICK_ZONE_W &&
+           y >= STICK_ZONE_Y && y <= GAME_HEIGHT;
+  }
+
   private create() {
-    this.base = this.scene.add.graphics().setDepth(60).setScrollFactor(0);
+    // スティックエリアの薄い背景表示
+    this.zoneBg = this.scene.add.graphics().setDepth(59).setScrollFactor(0);
+    this.zoneBg.fillStyle(0xffffff, 0.04);
+    this.zoneBg.fillRect(STICK_ZONE_X, STICK_ZONE_Y, STICK_ZONE_W, STICK_ZONE_H);
+    this.zoneBg.lineStyle(1, 0xffffff, 0.12);
+    this.zoneBg.strokeRect(STICK_ZONE_X, STICK_ZONE_Y, STICK_ZONE_W, STICK_ZONE_H);
+
+    this.base  = this.scene.add.graphics().setDepth(60).setScrollFactor(0);
     this.thumb = this.scene.add.graphics().setDepth(61).setScrollFactor(0);
     this.drawBase();
 
@@ -40,18 +53,14 @@ export class VirtualJoystick {
     input.addPointer(2);
 
     input.on('pointerdown', (p: Phaser.Input.Pointer) => {
-      if (p.x < GAME_WIDTH / 2) {
+      if (this.isInStickZone(p.x, p.y)) {
+        // スティックエリア → 移動
         if (this.activePointerId === null) {
           this.activePointerId = p.id;
-          this.tapDownTime = Date.now();
-          this.tapDownX = p.x;
-          this.tapDownY = p.y;
-          this.baseX = p.x;
-          this.baseY = p.y;
-          this.drawBase();
+          this.updateThumb(p.x, p.y);
         }
       } else {
-        // Right side → shoot
+        // それ以外 → 射撃
         if (this.shootPointerId === null) {
           this.shootPointerId = p.id;
           this.shootCallback?.(p.worldX, p.worldY);
@@ -61,32 +70,12 @@ export class VirtualJoystick {
 
     input.on('pointermove', (p: Phaser.Input.Pointer) => {
       if (p.id === this.activePointerId) {
-        const ddx = p.x - this.baseX;
-        const ddy = p.y - this.baseY;
-        const dist = Math.sqrt(ddx * ddx + ddy * ddy);
-        if (dist > this.radius) {
-          this.dx = (ddx / dist) * this.radius;
-          this.dy = (ddy / dist) * this.radius;
-        } else {
-          this.dx = ddx;
-          this.dy = ddy;
-        }
-        this.drawThumb();
+        this.updateThumb(p.x, p.y);
       }
     });
 
     input.on('pointerup', (p: Phaser.Input.Pointer) => {
       if (p.id === this.activePointerId) {
-        const elapsed = Date.now() - this.tapDownTime;
-        const moved = Math.sqrt(
-          (p.x - this.tapDownX) ** 2 + (p.y - this.tapDownY) ** 2,
-        );
-
-        // 短いタップ → タップ位置に向かって発射
-        if (elapsed < this.TAP_MS && moved < this.TAP_MOVE) {
-          this.shootCallback?.(p.worldX, p.worldY);
-        }
-
         this.activePointerId = null;
         this.dx = 0;
         this.dy = 0;
@@ -96,6 +85,20 @@ export class VirtualJoystick {
         this.shootPointerId = null;
       }
     });
+  }
+
+  private updateThumb(px: number, py: number) {
+    const ddx = px - this.baseX;
+    const ddy = py - this.baseY;
+    const dist = Math.sqrt(ddx * ddx + ddy * ddy);
+    if (dist > this.radius) {
+      this.dx = (ddx / dist) * this.radius;
+      this.dy = (ddy / dist) * this.radius;
+    } else {
+      this.dx = ddx;
+      this.dy = ddy;
+    }
+    this.drawThumb();
   }
 
   private drawBase() {
@@ -120,12 +123,13 @@ export class VirtualJoystick {
   }
 
   setVisible(v: boolean) {
-    this._visible = v;
+    this.zoneBg.setVisible(v);
     this.base.setVisible(v);
     this.thumb.setVisible(v);
   }
 
   destroy() {
+    this.zoneBg.destroy();
     this.base.destroy();
     this.thumb.destroy();
   }
