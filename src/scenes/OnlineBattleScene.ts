@@ -388,8 +388,7 @@ export class OnlineBattleScene extends Phaser.Scene {
       if (beam.dead) { this.localBeams.splice(i, 1); continue; }
 
       if (!beam.hitTargets.has(this.remoteSprite) &&
-          beam.hits(this.remoteX, this.remoteY, tr) &&
-          !this.obstacles.lineBlocked(beam.x, beam.y, this.remoteX, this.remoteY)) {
+          beam.hits(this.remoteX, this.remoteY, tr)) {
         beam.hitTargets.add(this.remoteSprite);
         this.sendHit(beam.damage, 'beam');
         if (beam.hitTargets.size >= beam.maxHits) {

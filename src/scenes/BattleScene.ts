@@ -277,8 +277,7 @@ export class BattleScene extends Phaser.Scene {
 
       if (target.isAlive &&
           !beam.hitTargets.has(target) &&
-          beam.hits(target.x, target.y, tr) &&
-          !this.obstacles.lineBlocked(beam.x, beam.y, target.x, target.y)) {
+          beam.hits(target.x, target.y, tr)) {
         beam.hitTargets.add(target);
         target.takeDamage(beam.damage, 'beam');
         if (beam.hitTargets.size >= beam.maxHits) { beam.destroy(); beams.splice(i, 1); }
