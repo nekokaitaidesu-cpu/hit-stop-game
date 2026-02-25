@@ -248,8 +248,10 @@ export class BattleScene extends Phaser.Scene {
           const horizontal = Math.abs(lb.vx) > Math.abs(lb.vy);
           const reflectAngle = horizontal ? Math.PI - lb.angle : -lb.angle;
           const SPREAD = Math.PI / 6;
+          const OFFSET = 20; // 障害物内部から確実に脱出させるオフセット
           [0, SPREAD, -SPREAD].forEach(da => {
-            lasers.push(new LaserBolt(this, lb.x, lb.y, reflectAngle + da, lb.speed, lb.damage, lb.ownerTag, 1));
+            const a = reflectAngle + da;
+            lasers.push(new LaserBolt(this, lb.x + Math.cos(a) * OFFSET, lb.y + Math.sin(a) * OFFSET, a, lb.speed, lb.damage, lb.ownerTag, 1));
           });
         }
         lb.destroy();

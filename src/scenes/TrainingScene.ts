@@ -27,7 +27,8 @@ class TrainingDummy extends Phaser.Physics.Arcade.Sprite {
     this.setDepth(20);
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setImmovable(true);
-    body.setCircle(PLAYER_CONFIG.radius + 8, -(PLAYER_CONFIG.radius + 8), -(PLAYER_CONFIG.radius + 8));
+    // dummyテクスチャsize=64, 中心=32, hitbox radius=30 → offset = 32-30 = 2
+    body.setCircle(PLAYER_CONFIG.radius + 8, 2, 2);
     this.hpBar = scene.add.graphics().setDepth(25);
   }
 

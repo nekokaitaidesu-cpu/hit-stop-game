@@ -16,7 +16,8 @@ export class Pellet extends Phaser.Physics.Arcade.Sprite {
     this.setDepth(10);
 
     const body = this.body as Phaser.Physics.Arcade.Body;
-    body.setCircle(4, -4, -4);
+    // テクスチャsize=14, 中心=7, hitbox radius=4 → offset = 7-4 = 3
+    body.setCircle(4, 3, 3);
     this.setCollideWorldBounds(false);
     body.setVelocity(vx, vy);
   }

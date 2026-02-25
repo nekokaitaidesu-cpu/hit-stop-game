@@ -362,8 +362,10 @@ export class OnlineBattleScene extends Phaser.Scene {
           const horizontal = Math.abs(lb.vx) > Math.abs(lb.vy);
           const reflectAngle = horizontal ? Math.PI - lb.angle : -lb.angle;
           const SPREAD = Math.PI / 6;
+          const OFFSET = 20;
           [0, SPREAD, -SPREAD].forEach(da => {
-            this.localLasers.push(new LaserBolt(this, lb.x, lb.y, reflectAngle + da, lb.speed, lb.damage, lb.ownerTag, 1));
+            const a = reflectAngle + da;
+            this.localLasers.push(new LaserBolt(this, lb.x + Math.cos(a) * OFFSET, lb.y + Math.sin(a) * OFFSET, a, lb.speed, lb.damage, lb.ownerTag, 1));
           });
         }
         lb.destroy();
@@ -442,8 +444,10 @@ export class OnlineBattleScene extends Phaser.Scene {
           const horizontal = Math.abs(lb.vx) > Math.abs(lb.vy);
           const reflectAngle = horizontal ? Math.PI - lb.angle : -lb.angle;
           const SPREAD = Math.PI / 6;
+          const OFFSET = 20;
           [0, SPREAD, -SPREAD].forEach(da => {
-            this.remoteLasers.push(new LaserBolt(this, lb.x, lb.y, reflectAngle + da, lb.speed, 0, 'remote', 1));
+            const a = reflectAngle + da;
+            this.remoteLasers.push(new LaserBolt(this, lb.x + Math.cos(a) * OFFSET, lb.y + Math.sin(a) * OFFSET, a, lb.speed, 0, 'remote', 1));
           });
         }
         lb.destroy();

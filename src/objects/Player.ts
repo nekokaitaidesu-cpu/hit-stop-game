@@ -47,7 +47,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setDepth(20);
     this.setCollideWorldBounds(true);
     const body = this.body as Phaser.Physics.Arcade.Body;
-    body.setCircle(PLAYER_CONFIG.radius, -PLAYER_CONFIG.radius, -PLAYER_CONFIG.radius);
+    // テクスチャサイズ = radius*2+4 なので、中心オフセット = (radius*2+4)/2 - radius = 2
+    body.setCircle(PLAYER_CONFIG.radius, 2, 2);
   }
 
   get cooldownRatio(): number {
