@@ -114,10 +114,27 @@ export class MenuScene extends Phaser.Scene {
       modeBtns.push(btn);
     });
 
-    // ── CPU LEVEL（battle のときだけ） ───────────────────────
+    // ── START ────────────────────────────────────────────────
+    const startBtn = this.add.text(cx, 652, '▶  START  ◀', {
+      fontSize: '25px', color: '#000000', backgroundColor: '#44ff88',
+      padding: { x: 28, y: 13 }, fontStyle: 'bold',
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+    startBtn.on('pointerover', () => startBtn.setBackgroundColor('#88ffaa'));
+    startBtn.on('pointerout',  () => startBtn.setBackgroundColor('#44ff88'));
+    startBtn.on('pointerdown', () => {
+      const sceneKey = this.selectedMode === 'training' ? 'TrainingScene' : 'BattleScene';
+      this.scene.start(sceneKey, {
+        weapon: this.selectedWeapon,
+        mode:   this.selectedMode,
+        level:  this.selectedLevel,
+      });
+    });
+
+    // ── CPU LEVEL（battle のときだけ・START下） ──────────────
     this.levelSection = this.add.container(0, 0);
 
-    const lvLabel = this.add.text(cx, 658, '── CPU LEVEL ──', {
+    const lvLabel = this.add.text(cx, 714, '── CPU LEVEL ──', {
       fontSize: '15px', color: '#ffaaaa',
     }).setOrigin(0.5);
     this.levelSection.add(lvLabel);
@@ -128,11 +145,11 @@ export class MenuScene extends Phaser.Scene {
     const levelBtns: Phaser.GameObjects.Text[] = [];
 
     levels.forEach((lv, i) => {
-      const btn = this.add.text(cx, 692 + i * 50, levelLabels[i], {
-        fontSize: '16px',
+      const btn = this.add.text(cx, 746 + i * 44, levelLabels[i], {
+        fontSize: '15px',
         color:           lv === this.selectedLevel ? lc.sel : lc.def,
         backgroundColor: lv === this.selectedLevel ? lc.selBg : lc.defBg,
-        padding: { x: 14, y: 8 },
+        padding: { x: 14, y: 7 },
       }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
       btn.on('pointerdown', () => {
@@ -148,23 +165,6 @@ export class MenuScene extends Phaser.Scene {
     });
 
     this.levelSection.setVisible(this.selectedMode === 'battle');
-
-    // ── START ────────────────────────────────────────────────
-    const startBtn = this.add.text(cx, 832, '▶  START  ◀', {
-      fontSize: '25px', color: '#000000', backgroundColor: '#44ff88',
-      padding: { x: 28, y: 13 }, fontStyle: 'bold',
-    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-
-    startBtn.on('pointerover', () => startBtn.setBackgroundColor('#88ffaa'));
-    startBtn.on('pointerout',  () => startBtn.setBackgroundColor('#44ff88'));
-    startBtn.on('pointerdown', () => {
-      const sceneKey = this.selectedMode === 'training' ? 'TrainingScene' : 'BattleScene';
-      this.scene.start(sceneKey, {
-        weapon: this.selectedWeapon,
-        mode:   this.selectedMode,
-        level:  this.selectedLevel,
-      });
-    });
 
   }
 }
