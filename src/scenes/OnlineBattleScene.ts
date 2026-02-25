@@ -406,15 +406,49 @@ export class OnlineBattleScene extends Phaser.Scene {
 
   // ─── リモート弾の更新（視覚のみ・命中判定なし） ─────────────────────────
   private updateRemoteProjectiles(dt: number) {
+    // ── リモートペレット（ショットガン）：障害物に当たったら消える
     for (let i = this.remotePellets.length - 1; i >= 0; i--) {
       const p = this.remotePellets[i];
       if (!p.active) { this.remotePellets.splice(i, 1); continue; }
       p.update();
+      if (p.active && this.obstacles.circleOverlaps(p.x, p.y, 4)) {
+        p.destroy();
+        this.remotePellets.splice(i, 1);
+      }
     }
+
+    // ── リモートレーザー：壁反射・障害物反射をローカルと同じロジックで再現
     for (let i = this.remoteLasers.length - 1; i >= 0; i--) {
-      this.remoteLasers[i].update(dt);
-      if (this.remoteLasers[i].dead) this.remoteLasers.splice(i, 1);
+      const lb = this.remoteLasers[i];
+      lb.update(dt);
+
+      // 壁反射で生まれた子レーザーを追加
+      for (const sp of lb.pendingSpawn) {
+        this.remoteLasers.push(new LaserBolt(
+          this, sp.x, sp.y, sp.angle, lb.speed, 0, 'remote', sp.generation,
+        ));
+      }
+      lb.pendingSpawn = [];
+
+      if (lb.dead) { this.remoteLasers.splice(i, 1); continue; }
+
+      // 障害物反射（ローカルと同じ挙動）
+      if (this.obstacles.containsPoint(lb.x, lb.y)) {
+        if (lb.generation < 1) {
+          const horizontal = Math.abs(lb.vx) > Math.abs(lb.vy);
+          const reflectAngle = horizontal ? Math.PI - lb.angle : -lb.angle;
+          const SPREAD = Math.PI / 6;
+          [0, SPREAD, -SPREAD].forEach(da => {
+            this.remoteLasers.push(new LaserBolt(this, lb.x, lb.y, reflectAngle + da, lb.speed, 0, 'remote', 1));
+          });
+        }
+        lb.destroy();
+        this.remoteLasers.splice(i, 1);
+        continue;
+      }
     }
+
+    // ── リモートビーム
     for (let i = this.remoteBeams.length - 1; i >= 0; i--) {
       this.remoteBeams[i].update(dt);
       if (this.remoteBeams[i].dead) this.remoteBeams.splice(i, 1);
