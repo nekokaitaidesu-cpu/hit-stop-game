@@ -19,6 +19,9 @@ export class OnlineLobbyScene extends Phaser.Scene {
   }
 
   create() {
+    // シーン再開時に前回の入力をリセット
+    this.inputDigits = [];
+
     const cx = GAME_WIDTH / 2;
 
     const bg = this.add.graphics();

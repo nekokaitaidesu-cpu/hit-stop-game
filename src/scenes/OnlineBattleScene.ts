@@ -306,6 +306,21 @@ export class OnlineBattleScene extends Phaser.Scene {
 
       if (lb.dead) { this.localLasers.splice(i, 1); continue; }
 
+      // 障害物反射
+      if (this.obstacles.containsPoint(lb.x, lb.y)) {
+        if (lb.generation < 1) {
+          const horizontal = Math.abs(lb.vx) > Math.abs(lb.vy);
+          const reflectAngle = horizontal ? Math.PI - lb.angle : -lb.angle;
+          const SPREAD = Math.PI / 6;
+          [0, SPREAD, -SPREAD].forEach(da => {
+            this.localLasers.push(new LaserBolt(this, lb.x, lb.y, reflectAngle + da, lb.speed, lb.damage, lb.ownerTag, 1));
+          });
+        }
+        lb.destroy();
+        this.localLasers.splice(i, 1);
+        continue;
+      }
+
       if (!lb.hasHit && lb.hits(this.remoteX, this.remoteY, tr)) {
         lb.hasHit = true;
         this.sendHit(lb.damage, 'laser');

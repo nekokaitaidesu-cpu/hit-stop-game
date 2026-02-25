@@ -240,8 +240,16 @@ export class BattleScene extends Phaser.Scene {
 
       if (lb.dead) { lasers.splice(i, 1); continue; }
 
-      // Obstacle: レーザーが障害物内なら消える
+      // Obstacle: レーザーが障害物にぶつかったら反射・3分裂
       if (this.obstacles.containsPoint(lb.x, lb.y)) {
+        if (lb.generation < 1) {
+          const horizontal = Math.abs(lb.vx) > Math.abs(lb.vy);
+          const reflectAngle = horizontal ? Math.PI - lb.angle : -lb.angle;
+          const SPREAD = Math.PI / 6;
+          [0, SPREAD, -SPREAD].forEach(da => {
+            lasers.push(new LaserBolt(this, lb.x, lb.y, reflectAngle + da, lb.speed, lb.damage, lb.ownerTag, 1));
+          });
+        }
         lb.destroy();
         lasers.splice(i, 1);
         continue;

@@ -20,10 +20,12 @@ export class ObstacleGroup {
     this.graphics = scene.add.graphics().setDepth(5);
 
     for (const d of defs) {
-      // Physics body: invisible rectangle
+      // Physics body: invisible rectangle (staticGroup handles body creation)
       const rect = scene.add.rectangle(d.x + d.w / 2, d.y + d.h / 2, d.w, d.h);
-      scene.physics.add.existing(rect, true); // static
       this.staticGroup.add(rect);
+      // 明示的にボディ位置をリセット（描画グラフィックと一致させる）
+      const body = rect.body as Phaser.Physics.Arcade.StaticBody;
+      body.reset(d.x + d.w / 2, d.y + d.h / 2);
 
       // Visual
       this.graphics.fillStyle(0x334466, 1);

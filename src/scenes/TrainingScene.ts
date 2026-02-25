@@ -223,6 +223,10 @@ export class TrainingScene extends Phaser.Scene {
       }
 
       if (lb.dead) { this.allLasers.splice(i, 1); continue; }
+
+      // 障害物反射（TrainingSceneに障害物はないが念のためチェック）
+      // TrainingSceneには障害物なし - スキップ
+
       if (lb.ownerTag === 'player' && lb.hits(this.dummy.x, this.dummy.y, 30)) {
         lb.hasHit = true;
         this.dummy.takeDamage(lb.damage);
