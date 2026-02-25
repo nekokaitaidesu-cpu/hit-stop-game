@@ -140,9 +140,16 @@ export class MenuScene extends Phaser.Scene {
       });
     });
 
-    // Controls hint
-    this.add.text(cx, 847, 'PC: WASD + Click │ Mobile: Joystick + Tap', {
-      fontSize: '11px', color: '#444444',
-    }).setOrigin(0.5);
+    // ── ONLINE BATTLE ──────────────────────────────────────────
+    const onlineBtn = this.add.text(cx, 847, '🌐  ONLINE BATTLE（友達と対戦）', {
+      fontSize: '15px', color: '#44aaff', backgroundColor: '#001133',
+      padding: { x: 16, y: 8 },
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+    onlineBtn.on('pointerover', () => onlineBtn.setBackgroundColor('#002255'));
+    onlineBtn.on('pointerout',  () => onlineBtn.setBackgroundColor('#001133'));
+    onlineBtn.on('pointerdown', () => {
+      this.scene.start('OnlineLobbyScene');
+    });
   }
 }
