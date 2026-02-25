@@ -10,8 +10,9 @@ export type NetMsg =
   | { type: 'fire';          angle: number }
   | { type: 'hit';           amount: number; weapon: WeaponType }
   | { type: 'gameOver' }
-  | { type: 'rematch';       weapon: WeaponType; obstacles?: ObstacleDef[] } // LOSE側が送信
-  | { type: 'rematchAccept'; weapon: WeaponType; obstacles?: ObstacleDef[] }; // WIN側が返信
+  | { type: 'rematch';       weapon: WeaponType; obstacles?: ObstacleDef[] }
+  | { type: 'rematchAccept'; weapon: WeaponType; obstacles?: ObstacleDef[] }
+  | { type: 'returnToMenu' }; // どちらかがメニューに戻る → 相手も即帰還
 
 export class PeerManager {
   private peer: Peer;

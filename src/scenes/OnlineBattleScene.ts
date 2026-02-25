@@ -44,6 +44,7 @@ export class OnlineBattleScene extends Phaser.Scene {
   private localPellets:  Pellet[]          = [];
   private localLasers:   LaserBolt[]       = [];
   private localBeams:    BeamProjectile[]  = [];
+  private remotePellets: Pellet[]          = [];
   private remoteLasers:  LaserBolt[]       = [];
   private remoteBeams:   BeamProjectile[]  = [];
 
@@ -254,6 +255,12 @@ export class OnlineBattleScene extends Phaser.Scene {
         this.endGame(true);
         break;
 
+      case 'returnToMenu':
+        // 相手がメニューに戻った → 自分も即メニューへ
+        this.cleanup(true);
+        this.scene.start('MenuScene');
+        break;
+
       case 'rematch':
         // WIN側が受信 → 返信して再戦開始
         if (this.isHost) {
@@ -282,14 +289,22 @@ export class OnlineBattleScene extends Phaser.Scene {
     }
   }
 
-  // ─── リモート弾の視覚再現 ─────────────────────────────────────────────────
+  // ─── リモート弾の視覚再現（全武器対応・damage=0） ────────────────────────
   private createRemoteProjectile(angle: number) {
     const x = this.remoteX;
     const y = this.remoteY;
 
-    if (this.remoteWeapon === 'laser') {
+    if (this.remoteWeapon === 'shotgun') {
+      const cfg = WEAPON_CONFIG.shotgun;
+      const spread = Math.PI / 5;
+      for (let i = 0; i < cfg.pellets; i++) {
+        const a = angle - spread / 2 + (spread / (cfg.pellets - 1)) * i;
+        this.remotePellets.push(
+          new Pellet(this, x, y, Math.cos(a) * cfg.speed, Math.sin(a) * cfg.speed, 0, 'remote'),
+        );
+      }
+    } else if (this.remoteWeapon === 'laser') {
       const cfg = WEAPON_CONFIG.laser;
-      // damage=0：視覚のみ
       this.remoteLasers.push(
         new LaserBolt(this, x, y, angle, cfg.speed, 0, 'remote'),
       );
@@ -299,8 +314,6 @@ export class OnlineBattleScene extends Phaser.Scene {
         new BeamProjectile(this, x, y, angle, cfg.speed, cfg.width, cfg.height, 0, cfg.maxHits, 'remote'),
       );
     }
-    // shotgun は弾数が多く再現コストが高いため、エフェクト無しで省略
-    // （命中判定はリモート側が行い hit メッセージで通知）
   }
 
   // ─── ローカル弾の更新・命中判定 ──────────────────────────────────────────
@@ -388,8 +401,13 @@ export class OnlineBattleScene extends Phaser.Scene {
     if (this.remoteHp <= 0) this.endGame(true);
   }
 
-  // ─── リモート弾の更新（視覚のみ） ────────────────────────────────────────
+  // ─── リモート弾の更新（視覚のみ・命中判定なし） ─────────────────────────
   private updateRemoteProjectiles(dt: number) {
+    for (let i = this.remotePellets.length - 1; i >= 0; i--) {
+      const p = this.remotePellets[i];
+      if (!p.active) { this.remotePellets.splice(i, 1); continue; }
+      p.update();
+    }
     for (let i = this.remoteLasers.length - 1; i >= 0; i--) {
       this.remoteLasers[i].update(dt);
       if (this.remoteLasers[i].dead) this.remoteLasers.splice(i, 1);
@@ -446,7 +464,11 @@ export class OnlineBattleScene extends Phaser.Scene {
       fontSize: '20px', color: '#aaaaaa', backgroundColor: '#222222',
       padding: { x: 18, y: 9 },
     }).setOrigin(0.5).setDepth(80).setInteractive({ useHandCursor: true })
-      .on('pointerdown', () => { this.cleanup(true); this.scene.start('MenuScene'); });
+      .on('pointerdown', () => {
+        this.peer.send({ type: 'returnToMenu' });
+        this.cleanup(true);
+        this.scene.start('MenuScene');
+      });
   }
 
   // ─── WIN側 UI ─────────────────────────────────────────────────────────────
@@ -575,6 +597,7 @@ export class OnlineBattleScene extends Phaser.Scene {
   }
 
   private cleanup(destroyPeer = true) {
+    this.remotePellets.filter(p => p.active).forEach(p => p.destroy());
     [...this.localLasers,  ...this.remoteLasers ].forEach(l => l.destroy());
     [...this.localBeams,   ...this.remoteBeams  ].forEach(b => b.destroy());
     this.remoteHpGraphics?.destroy();
