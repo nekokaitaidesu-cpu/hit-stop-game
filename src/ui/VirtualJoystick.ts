@@ -3,7 +3,7 @@ import { GAME_WIDTH, GAME_HEIGHT } from '../config';
 
 // 左下の固定スティックエリア
 const STICK_ZONE_W = 200;
-const STICK_ZONE_H = 210;
+const STICK_ZONE_H = 230;
 const STICK_ZONE_X = 0;
 const STICK_ZONE_Y = GAME_HEIGHT - STICK_ZONE_H;
 
@@ -15,7 +15,7 @@ export class VirtualJoystick {
 
   // スティックの固定中心座標
   private readonly baseX = 90;
-  private readonly baseY = GAME_HEIGHT - 100;
+  private readonly baseY = GAME_HEIGHT - 125;
   private readonly radius = 55;
   private readonly thumbRadius = 25;
 
