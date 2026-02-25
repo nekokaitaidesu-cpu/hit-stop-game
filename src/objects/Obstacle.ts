@@ -20,8 +20,22 @@ export class ObstacleGroup {
     this.graphics = scene.add.graphics().setDepth(5);
 
     for (const d of defs) {
-      // ③ origin(0,0) + 左上座標で配置 → グラフィックと完全一致
-      const rect = scene.add.rectangle(d.x, d.y, d.w, d.h).setOrigin(0, 0);
+      // 中心座標・デフォルト origin(0.5) で Rectangle を作成
+      const rect = scene.add.rectangle(d.x + d.w / 2, d.y + d.h / 2, d.w, d.h);
+
+      // ① staticGroup.add より先に physics.add.existing で body を生成
+      scene.physics.add.existing(rect, true);
+
+      // ② body の左上を (d.x, d.y) に直接強制セット
+      const body = rect.body as Phaser.Physics.Arcade.StaticBody;
+      body.position.set(d.x, d.y);
+      body.width     = d.w;
+      body.height    = d.h;
+      body.halfWidth = d.w / 2;
+      body.halfHeight = d.h / 2;
+      body.updateCenter();
+
+      // ③ body が既に存在するので staticGroup は再生成せず、グループに追加のみ
       this.staticGroup.add(rect);
 
       // Visual
