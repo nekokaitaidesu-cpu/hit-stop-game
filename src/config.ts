@@ -12,12 +12,12 @@ export const WEAPON_CONFIG = {
     speed: 600,
     cooldown: 40,
     damage: 5,   // 8→5（近距離ワンパン防止）
-    range: 400,
+    range: 580,
   },
   laser: {
     speed: 1080,
     cooldown: 30,
-    damage: 25,
+    damage: 15,
     maxGenerations: 1,
     range: 600,
   },

@@ -58,7 +58,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   moveWithVector(dx: number, dy: number) {
     const len = Math.sqrt(dx * dx + dy * dy);
-    const speed = PLAYER_CONFIG.speed;
+    const speed = PLAYER_CONFIG.speed * (this.weapon === 'shotgun' ? 1.1 : 1.0);
     if (len > 0.01) {
       this.setVelocity((dx / len) * speed, (dy / len) * speed);
     } else {
